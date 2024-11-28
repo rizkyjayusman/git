@@ -8,7 +8,7 @@ fi
 
 ACTION=$1
 TYPE=$2
-MESSAGE=$3
+MESSAGE="${@:3}"
 
 if [ "$ACTION" != "commit" ]; then
   echo "ERROR: The first argument must be 'commit'."
