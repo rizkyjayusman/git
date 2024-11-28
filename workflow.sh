@@ -1,33 +1,56 @@
 #!/bin/bash
 
 if [ "$#" -lt 3 ]; then
-  echo "Usage: sh gitworkflow.sh <commit> <type> <message>"
-  echo "Allowed types: feat, fix, refactor, chore"
+  echo "Usage: sh gitworkflow.sh <branch|commit> <type> <branch-name|message>"
+  echo "Allowed types for branch: feature, bugfix, hotfix"
+  echo "Allowed types for commit: feat, fix, refactor, chore"
   exit 1
 fi
 
 ACTION=$1
 TYPE=$2
-MESSAGE="${@:3}"
 
-if [ "$ACTION" != "commit" ]; then
-  echo "ERROR: The first argument must be 'commit'."
-  exit 1
-fi
+if [ "$ACTION" == "branch" ]; then
+  BRANCH_NAME="${@:3}"
+  
+  PATTERN="^(feature|bugfix|hotfix)(\/[a-zA-Z0-9\-]+)?\/[a-zA-Z0-9\-]+$"
+  
+  if [[ ! "$BRANCH_NAME" =~ $PATTERN ]]; then
+    echo "ERROR: Invalid branch name format."
+    echo "Branch name must match the format: <type>/<scope>/<branch-name>"
+    echo "Allowed types: feature, bugfix, hotfix"
+    exit 1
+  fi
+  
+  if git show-ref --quiet refs/heads/"$BRANCH_NAME"; then
+    echo "ERROR: Branch '$BRANCH_NAME' already exists."
+    exit 1
+  fi
 
-if [[ ! "$TYPE" =~ ^(feat|fix|refactor|chore)$ ]]; then
-  echo "ERROR: Invalid commit type. Allowed types: feat, fix, refactor, chore."
-  exit 1
-fi
+  git checkout -b "$BRANCH_NAME"
+  echo "Switched to new branch '$BRANCH_NAME'"
+  
+elif [ "$ACTION" == "commit" ]; then
+  MESSAGE="${@:3}"
 
-COMMIT_MSG="$TYPE: $MESSAGE"
+  if [[ ! "$TYPE" =~ ^(feat|fix|refactor|chore)$ ]]; then
+    echo "ERROR: Invalid commit type. Allowed types: feat, fix, refactor, chore."
+    exit 1
+  fi
 
-git add .
-git commit -m "$COMMIT_MSG"
+  COMMIT_MSG="$TYPE: $MESSAGE"
 
-if [ $? -eq 0 ]; then
-  echo "Commit successful with message: '$COMMIT_MSG'"
+  git add .
+
+  git commit -m "$COMMIT_MSG"
+
+  if [ $? -eq 0 ]; then
+    echo "Commit successful with message: '$COMMIT_MSG'"
+  else
+    echo "ERROR: Commit failed."
+    exit 1
+  fi
 else
-  echo "ERROR: Commit failed."
+  echo "ERROR: Invalid action. Use 'branch' or 'commit'."
   exit 1
 fi
