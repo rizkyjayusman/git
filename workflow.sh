@@ -11,13 +11,17 @@ ACTION=$1
 TYPE=$2
 
 if [ "$ACTION" == "branch" ]; then
-  BRANCH_NAME="${@:3}"
+  if [ "$#" -eq 3 ]; then
+    BRANCH_NAME="$TYPE/${@:3}"  # No scope, just type and branch name
+  else
+    BRANCH_NAME="$TYPE/${@:3:1}/${@:4}"  # With scope, type, scope, and branch name
+  fi
   
   PATTERN="^(feature|bugfix|hotfix)(\/[a-zA-Z0-9\-]+)?\/[a-zA-Z0-9\-]+$"
   
   if [[ ! "$BRANCH_NAME" =~ $PATTERN ]]; then
     echo "ERROR: Invalid branch name format."
-    echo "Branch name must match the format: <type>/<scope>/<branch-name>"
+    echo "Branch name must match the format: <type>/<scope>/<branch-name> or <type>/<branch-name>"
     echo "Allowed types: feature, bugfix, hotfix"
     exit 1
   fi
